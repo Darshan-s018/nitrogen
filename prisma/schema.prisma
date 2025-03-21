@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customers {
+  id          Int     @id @default(autoincrement())
+  name        String
+  email       String  @unique
+  phoneNumber String  @unique
+  address     String
+  orders Orders[]
+}
+  
+model Restaurants {
+  id       Int     @id @default(autoincrement())
+  name     String  @unique
+  location String
+  orders   Orders[]
+  menuItems MenuItems[]
+}
+
+model MenuItems {
+  id           Int      @id @default(autoincrement())
+  restaurantId Int
+  name         String
+  price        Decimal
+  isAvailable  Boolean  @default(true)
+
+  @@index([restaurantId])
+  restaurant   Restaurants @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems   OrderItems[]
+}
+
+model Orders {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  restaurantId Int
+  status      OrderStatus @default(Placed)
+  totalPrice  Decimal
+  orderTime   DateTime @default(now())
+
+  @@index([customerId])
+  @@index([restaurantId])
+  customer   Customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  restaurant   Restaurants @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems  OrderItems[]
+}
+
+model OrderItems {
+  id         Int  @id @default(autoincrement())
+  orderId    Int
+  menuItemId Int
+  quantity   Int
+
+  @@index([orderId])
+  @@index([menuItemId])
+  order     Orders    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem  MenuItems @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+}
+
+enum OrderStatus {
+  Placed
+  Preparing
+  Completed
+  Cancelled
+}
