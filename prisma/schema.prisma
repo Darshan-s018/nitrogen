@@ -13,60 +13,52 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Customers {
+model Customer {
   id          Int     @id @default(autoincrement())
-  name        String
-  email       String  @unique
-  phoneNumber String  @unique
-  address     String
-  orders Orders[]
-}
-  
-model Restaurants {
-  id       Int     @id @default(autoincrement())
-  name     String  @unique
-  location String
-  orders   Orders[]
-  menuItems MenuItems[]
+  name        String  @db.VarChar(255)
+  email       String  @unique @db.VarChar(255)
+  phoneNumber String  @unique @db.VarChar(20)
+  address     String  @db.Text
+  orders      Order[]
 }
 
-model MenuItems {
-  id           Int      @id @default(autoincrement())
+model Restaurant {
+  id       Int        @id @default(autoincrement())
+  name     String     @unique @db.VarChar(255)
+  location String     @db.Text
+  menu     MenuItem[]
+  orders   Order[]
+}
+
+model MenuItem {
+  id           Int       @id @default(autoincrement())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   restaurantId Int
-  name         String
-  price        Decimal
-  isAvailable  Boolean  @default(true)
-
-  @@index([restaurantId])
-  restaurant   Restaurants @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  orderItems   OrderItems[]
+  name         String    @db.VarChar(255)
+  price        Decimal   @db.Decimal(10,2)
+  isAvailable  Boolean   @default(true)
+  orderItems   OrderItem[]
 }
 
-model Orders {
-  id          Int      @id @default(autoincrement())
-  customerId  Int
+model Order {
+  id           Int       @id @default(autoincrement())
+  customer     Customer  @relation(fields: [customerId], references: [id])
+  customerId   Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   restaurantId Int
-  status      OrderStatus @default(Placed)
-  totalPrice  Decimal
-  orderTime   DateTime @default(now())
-
-  @@index([customerId])
-  @@index([restaurantId])
-  customer   Customers @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  restaurant   Restaurants @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  orderItems  OrderItems[]
+  status       OrderStatus @default(Placed)
+  totalPrice   Decimal   @db.Decimal(10,2)
+  orderTime    DateTime  @default(now())
+  orderItems   OrderItem[]
 }
 
-model OrderItems {
-  id         Int  @id @default(autoincrement())
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  order      Order    @relation(fields: [orderId], references: [id])
   orderId    Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
   menuItemId Int
   quantity   Int
-
-  @@index([orderId])
-  @@index([menuItemId])
-  order     Orders    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuItem  MenuItems @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
 }
 
 enum OrderStatus {
